@@ -1,0 +1,246 @@
+*bash-runner.txt*     For Neovim >= 0.8.0    Last change: 2025 June 14
+
+==============================================================================
+Table of Contents                         *bash-runner-table-of-contents*
+
+1. Bash Runner Plugin                     |bash-runner-plugin|
+  - Installation                          |bash-runner-installation|
+  - Usage                                 |bash-runner-usage|
+  - Configuration                         |bash-runner-configuration|
+  - Features                              |bash-runner-features|
+  - Examples                              |bash-runner-examples|
+  - API                                   |bash-runner-api|
+
+==============================================================================
+1. Bash Runner Plugin                     *bash-runner-plugin*
+
+A powerful Neovim plugin that allows you to execute Bash scripts directly 
+from buffers with asynchronous execution, argument support, and clean output 
+management.
+
+
+INSTALLATION                              *bash-runner-installation*
+
+Using Lazy.nvim (recommended):
+>
+    {
+      "eduuh/bash.nvim",
+      cmd = { "BashRunLine", "BashRunBlock", "BashRunFile" },
+      ft = { "bash", "sh", "zsh", "txt", "markdown", "md" },
+      keys = {
+        { "<leader>bl", "<cmd>BashRunLine<cr>", desc = "Run current line" },
+        { "<leader>bb", "<cmd>BashRunBlock<cr>", mode = "v", desc = "Run selection" },
+        { "<leader>bf", "<cmd>BashRunFile<cr>", desc = "Run entire buffer" },
+        { "<leader>bla", function() vim.ui.input({prompt="Arguments: "}, 
+          function(args) if args then vim.cmd("BashRunLineArgs " .. args) end end) end, 
+          desc = "Run line with args" },
+        { "<leader>bba", "<cmd>lua require('bash.runner').prompt_for_visual_args()<cr>", 
+          mode = "v", desc = "Run selection with args" },
+        { "<leader>bfa", function() vim.ui.input({prompt="Arguments: "}, 
+          function(args) if args then vim.cmd("BashRunFileArgs " .. args) end end) end, 
+          desc = "Run buffer with args" },
+      },
+      opts = {
+        -- Your configuration here
+      }
+    }
+<
+
+Using Packer.nvim:
+>
+    use {
+      "your-username/bash-runner.nvim",
+      config = function()
+        require("bash").setup({
+          -- Your configuration here
+        })
+      end
+    }
+<
+
+USAGE                                     *bash-runner-usage*
+
+Commands:
+
+Standard Commands (with argument prompt):
+- |:BashRunLine|   - Execute the current line as a Bash script
+- |:BashRunBlock|  - Execute the visual selection as a Bash script
+- |:BashRunFile|   - Execute the entire buffer as a Bash script
+
+Direct Argument Commands:
+- |:BashRunLineArgs|  - Execute the current line with given arguments
+- |:BashRunBlockArgs| - Execute the visual selection with given arguments
+- |:BashRunFileArgs|  - Execute the entire buffer with given arguments
+
+Simplified Commands (no arguments):
+- |:BashRunLineSimple|  - Execute the current line without arguments
+- |:BashRunBlockSimple| - Execute the visual selection without arguments
+- |:BashRunFileSimple|  - Execute the entire buffer without arguments
+
+:BashRunLine                              *:BashRunLine*
+    Execute the Bash script on the current cursor line.
+    You'll be prompted for arguments.
+
+:BashRunBlock                             *:BashRunBlock*
+    Execute the visually selected block of text as a Bash script.
+    You'll be prompted for arguments.
+
+:BashRunFile                              *:BashRunFile*
+    Execute the entire buffer as a Bash script.
+    You'll be prompted for arguments.
+
+:BashRunLineArgs [args]                  *:BashRunLineArgs*
+    Execute the current line as a Bash script with specified arguments.
+    Arguments are passed directly via command line.
+    Example: `:BashRunLineArgs arg1 arg2`
+
+:BashRunBlockArgs [args]                 *:BashRunBlockArgs*
+    Execute the visually selected block of text as a Bash script with specified arguments.
+    Arguments are passed directly via command line.
+    Example: `:BashRunBlockArgs arg1 arg2`
+
+:BashRunFileArgs [args]                  *:BashRunFileArgs*
+    Execute the entire buffer as a Bash script with specified arguments.
+    Arguments are passed directly via command line.
+    Example: `:BashRunFileArgs arg1 arg2`
+
+:BashRunLineSimple                       *:BashRunLineSimple*
+    Execute the Bash script on the current cursor line without argument prompt.
+
+:BashRunBlockSimple                      *:BashRunBlockSimple*
+    Execute the visually selected block of text as a Bash script without argument prompt.
+
+:BashRunFileSimple                       *:BashRunFileSimple*
+    Execute the entire buffer as a Bash script without argument prompt.
+
+CONFIGURATION                             *bash-runner-configuration*
+
+Setup function with default options:
+>
+    require("bash").setup({
+      -- Shell to use for execution
+      shell = "/bin/bash",
+      
+      -- Whether to reuse the output buffer or create a new one each time
+      output_buffer_reuse = false,
+      
+      -- Default arguments for each execution mode
+      default_args = {
+        line = "",
+        block = "",
+        file = ""
+      },
+      
+      -- Supported filetypes for automatic bash execution
+      supported_filetypes = { "bash", "sh", "zsh", "txt", "markdown", "md" },
+      
+      -- Whether to allow running line mode in any filetype
+      allow_any_filetype = true,
+      
+      -- Enable default keymaps
+      enable_keymaps = true,  -- Default keymaps are enabled by default
+      
+      -- Custom keymap configuration
+      keymaps = {
+        prefix = "<leader>b",     -- Single prefix for bash commands
+        args_prefix = "<leader>a" -- Single prefix for commands with args
+      }
+    })
+<
+
+FEATURES                                  *bash-runner-features*
+
+- Async Execution: Scripts run asynchronously without blocking the UI
+- Multiple Execution Modes: Run current line, visual selection, or entire buffer
+- Argument Support: Prompt for script arguments before execution
+- Output Management: Results displayed in a dedicated output buffer
+- Configurable: Customize shell, output behavior, and keymaps
+- Error Handling: Clear display of stdout and stderr
+- Universal Line Mode: Run any line from any file type as a bash command
+- Markdown/Text Support: Execute bash scripts from txt, md, and markdown files
+
+EXAMPLES                                  *bash-runner-examples*
+
+Running a Simple Command:
+>
+    echo "Hello, World!"
+<
+
+Running a Block of Commands:
+>
+    name="Neovim"
+    echo "Welcome to $name"
+    date
+    ls -la
+<
+
+Script with Arguments:
+>
+    #!/bin/bash
+    echo "Hello, $1! Today is $(date)"
+<
+
+API                                       *bash-runner-api*
+
+Direct API access from Lua scripts:
+>
+    local bash = require("bash")
+
+    -- Run current line programmatically
+    bash.run_current_line()
+
+    -- Run visual selection
+    bash.run_visual_selection()
+
+    -- Run entire buffer
+    bash.run_entire_buffer()
+<
+
+SIMPLIFIED VARIANT (NO ARGS)              *bash-runner-simple*
+
+A simplified variant that doesn't include argument support is also available.
+This can be useful for users who want a more streamlined experience.
+
+Setup the simplified variant:
+>
+    require("bash.simple").setup({
+      -- Configuration options (same as main plugin)
+      shell = "/bin/bash",
+      output_buffer_reuse = false,
+      enable_keymaps = true,
+      keymaps = {
+        prefix = "<leader>s"   -- Single prefix for simple bash commands
+      }
+    })
+<
+
+Commands for the simplified variant:
+- |:BashRunLineSimple|  - Execute the current line without arguments
+- |:BashRunBlockSimple| - Execute the visual selection without arguments
+- |:BashRunFileSimple|  - Execute the entire buffer without arguments
+
+KEYMAP PATTERN                            *bash-runner-keymap-pattern*
+
+The plugin uses a streamlined keymap approach:
+
+Main Plugin:
+- `<leader>b` - Context-aware execution (line in normal mode, selection in visual mode)
+- `<leader>B` - Execute entire buffer
+- `<leader>a` - Context-aware execution with arguments
+- `<leader>A` - Execute entire buffer with arguments
+
+Simplified Variant:
+- `<leader>s` - Context-aware execution without arguments
+- `<leader>S` - Execute entire buffer without arguments
+
+This approach simplifies the keybinding pattern with fewer, more intuitive bindings.
+
+==============================================================================
+2. Requirements                           *bash-runner-requirements*
+
+- Neovim: 0.8+ (0.10+ recommended for best vim.system support)
+- Shell: Bash (or any POSIX-compatible shell)
+- OS: Linux, macOS, WSL
+
+==============================================================================
+vim:tw=78:ts=4:ft=help:norl:
